@@ -1,0 +1,1 @@
+docker run --rm -it maximz/rnapipeline:latest bash
