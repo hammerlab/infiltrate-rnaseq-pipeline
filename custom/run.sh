@@ -1,1 +1,8 @@
-docker run --rm -it maximz/rnapipeline:latest bash
+rm -r /mnt/disks/mz/rnatmp;
+mkdir /mnt/disks/mz/rnatmp;
+ln -s ~/rna/ERR431606_1.fastq.gz /mnt/disks/mz/rnatmp/
+ln -s ~/rna/ERR431606_2.fastq.gz /mnt/disks/mz/rnatmp/
+ln -s ~/rna/b37.kallisto.idx /mnt/disks/mz/rnatmp/
+echo 'try: '
+echo 'process b37.kallisto.idx testout'
+docker run --rm -it -v /mnt/disks/mz/rnatmp:/working maximz/rnapipeline:latest bash

@@ -7,10 +7,10 @@
 # 4. tar up output and logs
 
 # Arguments:
-# 1. first of the paired end reads, ending in .fastq. Corresponds to an input file with that name with .gz
-# 2. second of the paired end reads, ending in .fastq. Corresponds to an input file with that name with .gz
-# 3. kallisto index file name.
-# 4. output filename.
+# OLD 1. first of the paired end reads, ending in .fastq. Corresponds to an input file with that name with .gz
+# OLD 2. second of the paired end reads, ending in .fastq. Corresponds to an input file with that name with .gz
+# 1. kallisto index file name.
+# 2. output filename.
 
 echo -e "Starting\t$(date +"%Y-%m-%d %H:%M:%S:%3N")" > time.txt
 logSar &
@@ -97,14 +97,14 @@ echo -e "Finished Trimming Fastq:\t$(date +"%Y-%m-%d %H:%M:%S:%3N")" >> time.txt
 echo -e "Running Kallisto:\t$(date +"%Y-%m-%d %H:%M:%S:%3N")" >> time.txt
 # kallisto command depends on whether we have paired-end reads
 if (( $num > 0 )); then
-  kallisto quant -i $3 -b 30 -t $cpu --bias -o output/ $(ls -d -1 fastq_trimmed/*.fq) &>> out.txt
+  kallisto quant -i $1 -b 30 -t $cpu --bias -o output/ $(ls -d -1 fastq_trimmed/*.fq) &>> out.txt
 else
-  kallisto quant -i $3 -b 30 -t $cpu --bias --single -l 200 -s 5 -o output/ $(ls -d -1 fastq_trimmed/*.fq) &>> out.txt
+  kallisto quant -i $1 -b 30 -t $cpu --bias --single -l 200 -s 5 -o output/ $(ls -d -1 fastq_trimmed/*.fq) &>> out.txt
 fi
 echo -e "Taring output\t$(date +"%Y-%m-%d %H:%M:%S:%3N")" >> time.txt
-tar -zcvf $4.tar.gz output
+tar -zcvf $2.tar.gz output
 sar -A > sar.txt
 
-tar -zcvf $4.logs.tar.gz *.txt
+tar -zcvf $2.logs.tar.gz *.txt
 echo -e "Finished Taring output\t$(date +"%Y-%m-%d %H:%M:%S:%3N")" >> time.txt
 echo "DONE"
