@@ -1,0 +1,29 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: process-id_dashes
+spec:
+  template:
+    metadata:
+      name: process-id_dashes
+    spec:
+      containers:
+      - name: process-id_dashes
+        image: your-docker-image
+        command: ["process",  "path", "id", "25G", "3"]
+        resources:
+          limits:
+            cpu: 3
+            memory: 25Gi
+          requests:
+            cpu: 3
+            memory: 25Gi
+        volumeMounts:
+        - mountPath: /process
+          name: test-disk
+      volumes:
+      - name: test-disk
+        gcePersistentDisk:
+          pdName: test-disk
+          fsType: ext4
+      restartPolicy: Never

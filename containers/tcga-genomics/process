@@ -1,0 +1,79 @@
+#!/bin/bash
+echo -e "Starting\t$(date +"%Y-%m-%d %H:%M:%S:%3N")" > time.txt
+logSar &
+cd working
+
+cpu=$(getNumCPU)
+
+mem=$(free -h | gawk  '/Mem:/{print $2}')
+
+echo "You have $cpu cores and $mem GB of memory" >> out.txt
+echo -e "Beginning UNTAR:\t$(date +"%Y-%m-%d %H:%M:%S:%3N")" >> time.txt
+mkdir -p output
+mkdir -p fastq_untrimmed
+mkdir -p fastq_trimmed
+tar=$( ls *.tar* )
+echo "$tar" >> out.txt
+if [ "$tar" == *.tar.gz ]; then
+  untar="tar -I pigz -xvf *.tar.gz -C fastq_untrimmed/"
+else
+  untar="tar -xvf *.tar -C fastq_untrimmed/"
+fi
+echo $untar >> out.txt
+$untar >> out.txt
+rm $tar
+unpigz fastq_untrimmed/*.gz >> out.txt
+echo -e "Finished UNTAR:\t$(date +"%Y-%m-%d %H:%M:%S:%3N")" >> time.txt
+
+echo -e "Trimming Fastq:\t$(date +"%Y-%m-%d %H:%M:%S:%3N")" >> time.txt
+taskFile=/tmp/gdsc_parallel_tasks
+rm -f $taskFile
+
+num=$(ls fastq_untrimmed/*_1.* | wc -l)
+kallisto_option=""
+if (( $num > 0 )); then
+  for f1 in fastq_untrimmed/*_1.*
+  do
+    f2=${f1/_1\./_2.}
+    if [ -f $f2 ]; then
+      echo "trim_galore --paired $f1 $f2 --length 35 -o fastq_trimmed/" >> $taskFile
+    else
+      echo "trim_galore $f1 --length 35 -o fastq_trimmed/" >> $taskFile
+    fi
+  done
+else
+  for f1 in fastq_untrimmed/*
+  do
+      echo "trim_galore $f1 --length 35 -o fastq_trimmed/" >> $taskFile
+  done
+fi
+
+
+chmod 777 $taskFile
+parallel -a $taskFile --ungroup --max-procs $cpu &>> out.txt
+rm -f $taskFile
+
+untrimmed=$(ls fastq_untrimmed/* | wc -l)
+trimmed=$(ls fastq_trimmed/*.fq | wc -l)
+
+if [ $untrimmed != $trimmed ]; then
+  echo "Not all fastq files trimmed" &>> out.txt
+  exit 1;
+fi
+
+rm -rf fastq_untrimmed
+
+echo -e "Finished Trimming Fastq:\t$(date +"%Y-%m-%d %H:%M:%S:%3N")" >> time.txt
+echo -e "Running Kallisto:\t$(date +"%Y-%m-%d %H:%M:%S:%3N")" >> time.txt
+if (( $num > 0 )); then
+  kallisto quant -i gencode.v24.transcripts.idx -b 30 -t $cpu --bias -o output/ $(ls -d -1 fastq_trimmed/*.fq) &>> out.txt
+else
+  kallisto quant -i gencode.v24.transcripts.idx -b 30 -t $cpu --bias --single -l 200 -s 5 -o output/ $(ls -d -1 fastq_trimmed/*.fq) &>> out.txt
+fi
+echo -e "Taring output\t$(date +"%Y-%m-%d %H:%M:%S:%3N")" >> time.txt
+tar -zcvf $1.tar.gz output
+sar -A > sar.txt
+
+tar -zcvf $1.logs.tar.gz *.txt
+echo -e "Finished Taring output\t$(date +"%Y-%m-%d %H:%M:%S:%3N")" >> time.txt
+echo "DONE"
