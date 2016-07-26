@@ -1,4 +1,4 @@
-rm -r /mnt/disks/mz/rnatmp;
+rm -rf /mnt/disks/mz/rnatmp;
 mkdir /mnt/disks/mz/rnatmp;
 cp ~/rna/ERR431606_1.fastq.gz /mnt/disks/mz/rnatmp/
 cp ~/rna/ERR431606_2.fastq.gz /mnt/disks/mz/rnatmp/
