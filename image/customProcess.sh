@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e; # quit on error
+
 # What it does:
 # 1. un-gzip fastq data
 # 2. trim fastq
@@ -22,6 +24,7 @@ indexname=$2;
 outputname=$3;
 
 cd /working;
+mkdir -p tars/;
 mkdir -p output/$outputname/;
 mkdir -p logs/$outputname/;
 mkdir -p fastq_untrimmed;
@@ -97,9 +100,9 @@ else
   kallisto quant -i $indexname -b 30 -t $cpu --bias --single -l 200 -s 5 -o output/$outputname/ $(ls -d -1 fastq_trimmed/$prefix*.fq) &>> logs/$outputname/out.txt
 fi
 echo -e "Taring output\t$(date +"%Y-%m-%d %H:%M:%S:%3N")" >> logs/$outputname/time.txt
-tar -zcvf $outputname.tar.gz output/$outputname/
+tar -zcvf tars/$outputname.tar.gz output/$outputname/
 sar -A > logs/$outputname/sar.txt
 
-tar -zcvf $outputname.logs.tar.gz logs/$outputname/*
+tar -zcvf tars/$outputname.logs.tar.gz logs/$outputname/*
 echo -e "Finished Taring output\t$(date +"%Y-%m-%d %H:%M:%S:%3N")" >> logs/$outputname/time.txt
 echo "DONE"

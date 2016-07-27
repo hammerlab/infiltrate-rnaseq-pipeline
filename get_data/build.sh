@@ -1,0 +1,1 @@
+docker build -t maximz/download_rna:latest .

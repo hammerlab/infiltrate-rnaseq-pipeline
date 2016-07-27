@@ -65,7 +65,7 @@ gcloud container --project "pici-1286" clusters create "some-cluster" \
     --scope "https://www.googleapis.com/auth/compute","https://www.googleapis.com/auth/devstorage.read_write","https://www.googleapis.com/auth/taskqueue","https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/servicecontrol","https://www.googleapis.com/auth/service.management" \
     --num-nodes "3" --network "default" --enable-cloud-logging --no-enable-cloud-monitoring;
 gcloud compute --project "pici-1286" disks create "some-disk" --size "300" --zone "us-east1-b" --type "pd-standard"
-kubectl create -f ./some-task.yaml # all ids must be lowercase
+kubectl create -f ./some-task.yaml # all ids must be lowercase. # this didn't work
 kubectl get pods
 kubectl cluster-info
 kubectl config view
@@ -85,4 +85,11 @@ kubectl get jobs
 kubectl describe jobs/process-err431606
 # notice that job was successful in 3 seconds, wow
 # check from somewhere else that has access to nfs whether the file anewfile was created -- it was!!!
+
+# clean up
+kubectl delete jobs --all
+
+# real
+# if instant "successful", then something went wrong. unclear why returning "successful" -- maybe need to add "stop on error" to bash. one way to get it to fail is to do volumeMount to /data instead of to /working.
+kubectl create -f ./real.yaml
 ```
