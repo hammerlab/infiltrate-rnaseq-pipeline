@@ -1,0 +1,29 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: process-err431606
+spec:
+  template:
+    metadata:
+      name: process-err431606
+    spec:
+      containers:
+      - name: process-err431606
+        image: gcr.io/pici-1286/mz-rna-pipeline
+        #command: ["process",  "b37.kallisto.idx", "err431606", "25G", "3"]
+        command: ["touch",  "/data/anewfile"]
+        resources:
+          limits:
+            cpu: 3
+            memory: 25Gi
+          requests:
+            cpu: 3
+            memory: 25Gi
+        volumeMounts:
+        - mountPath: /data
+          name: nfs
+      volumes:
+      - name: nfs
+        persistentVolumeClaim:
+          claimName: nfs          
+      restartPolicy: Never

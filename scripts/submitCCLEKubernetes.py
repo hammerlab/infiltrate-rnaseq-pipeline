@@ -33,3 +33,7 @@ for path in paths:
     outFile.close()
 
     os.system('gcloud compute --project "cgc-05-0002" disks create "'+id.replace('.','-').replace('_','-').replace(",","").lower()+'-disk" --size "300" --zone "us-central1-c" --type "pd-standard" &&  kubectl create -f ./'+id.replace('.','-').replace('_','-').replace(",","")+'.yaml && rm ' + id.replace('.','-').replace('_','-').replace(",","")+ '.yaml')
+
+
+
+    
