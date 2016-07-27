@@ -92,4 +92,11 @@ kubectl delete jobs --all
 # real
 # if instant "successful", then something went wrong. unclear why returning "successful" -- maybe need to add "stop on error" to bash. one way to get it to fail is to do volumeMount to /data instead of to /working.
 kubectl create -f ./real.yaml
+
+
+# make sure failures are caught properly -- they are!
+kubectl create -f ./brokenExample.yaml # will not work, deliberately! 
+kubectl describe jobs/process-err431606 # monitor this
+# seems to produce unlimited failures. unclear how to limit the number of restarts.... documented here: https://github.com/kubernetes/kubernetes/issues/24533
+kubectl delete jobs --all # clean up. may seem like it fails at first, but just keep rerunning. https://github.com/kubernetes/kubernetes/issues/25704
 ```

@@ -19,7 +19,8 @@ spec:
             cpu: 3
             memory: 25Gi
         volumeMounts:
-        - mountPath: /working
+        #- mountPath: /working
+        - mountPath: /data
           name: nfs
       volumes:
       - name: nfs
