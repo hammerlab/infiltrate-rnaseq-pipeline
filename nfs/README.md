@@ -7,7 +7,7 @@ to monitor: (see https://console.cloud.google.com/deployments/details/mz-nfs?src
 go to http://localhost:3000/
 login with admin / X*QZcMsf3Y29nS
 
-from a GCE VM:
+from a GCE VM (`ssh -A maximz.us-east1-b.pici-1286`):
 ```
 sudo apt-get install nfs-common
 sudo mkdir /mnt/mz-data

@@ -36,8 +36,8 @@ echo "You have $cpu cores and $mem GB of memory" >> logs/$outputname/out.txt
 echo -e "Beginning ungzip:\t$(date +"%Y-%m-%d %H:%M:%S:%3N")" >> logs/$outputname/time.txt
 
 # gunzip (this will delete original files)
-# TODO: replace with unpigz, a parallel version of gzip: #unpigz fastq_untrimmed/*.gz >> out.txt
-ungz="gunzip $prefix*.fastq.gz"
+# unpigz is a parallel version of gunzip
+ungz="unpigz -f $prefix*.fastq.gz"
 echo $ungz >> logs/$outputname/out.txt
 $ungz >> logs/$outputname/out.txt
 
