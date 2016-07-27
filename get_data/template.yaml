@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: download-{jobid}
+spec:
+  template:
+    metadata:
+      name: download-{jobid}
+    spec:
+      containers:
+      - name: download-{jobid}
+        image: gcr.io/pici-1286/mz-rna-download:latest
+        command: ["get_data", "{url}", "{filename}", "{prefix}"]
+        resources:
+          limits:
+            cpu: 1
+            memory: 2Gi
+          requests:
+            cpu: 1
+            memory: 2Gi
+        volumeMounts:
+        - mountPath: /working
+          name: nfs
+      volumes:
+      - name: nfs
+        persistentVolumeClaim:
+          claimName: nfs          
+      restartPolicy: Never

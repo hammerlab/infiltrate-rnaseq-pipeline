@@ -8,6 +8,7 @@ to monitor: (see https://console.cloud.google.com/deployments/details/mz-nfs?src
 `gcloud compute ssh --ssh-flag=-L3000:localhost:3000 --project=pici-1286 --zone us-east1-b mz-nfs-vm`
 go to http://localhost:3000/
 login with admin / X*QZcMsf3Y29nS
+if you ssh in, the data is at `/mz-data`
 
 from a GCE VM (`ssh -A maximz.us-east1-b.pici-1286`):
 ```
@@ -102,3 +103,39 @@ kubectl describe jobs/process-err431606 # monitor this
 # seems to produce unlimited failures. unclear how to limit the number of restarts.... documented here: https://github.com/kubernetes/kubernetes/issues/24533
 kubectl delete jobs --all # clean up. may seem like it fails at first, but just keep rerunning. https://github.com/kubernetes/kubernetes/issues/25704
 ```
+
+
+# resize
+
+Stop the VM to resize. (Did we have to stop the cluster???)
+
+cluster --> from 3 nodes to 5 nodes
+nfs mz-nfs-vm --> from 2 vCPU, 7.5GB RAM to 8 vCPU, 40 GB RAM
+
+Filter Instances by `name:gke-some-cluster-*` to see the 5 cluster nodes. 
+
+# launch data downloads
+
+go to `get_data/`.
+
+```
+# ran these on maximz box
+./build.sh
+./test.sh
+./publish_image.sh
+
+# ran these from local
+rm jobs/*
+python make_jobs.py
+kubectl create -f ./jobs
+kubectl get jobs | wc -l # should be 127, subtract one for 126
+wc -l list_of_data.txt # should be 125, but do not have line break at end so actually 126
+```
+
+## monitor this while it happens
+
+Looks like it runs 15 pods at a time. (15 tasks)
+
+* http://localhost:3000/dashboard/db/storage
+* http://localhost:3000/dashboard/db/system
+* https://104.196.139.139/api/v1/proxy/namespaces/kube-system/services/kubernetes-dashboard

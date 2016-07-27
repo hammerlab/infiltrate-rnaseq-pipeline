@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: download-err431598-1
+spec:
+  template:
+    metadata:
+      name: download-err431598-1
+    spec:
+      containers:
+      - name: download-err431598-1
+        image: gcr.io/pici-1286/mz-rna-download:latest
+        command: ["get_data", "ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR431/ERR431598/ERR431598_1.fastq.gz", "ERR431598_1.fastq.gz", "/working"]
+        resources:
+          limits:
+            cpu: 1
+            memory: 2Gi
+          requests:
+            cpu: 1
+            memory: 2Gi
+        volumeMounts:
+        - mountPath: /working
+          name: nfs
+      volumes:
+      - name: nfs
+        persistentVolumeClaim:
+          claimName: nfs          
+      restartPolicy: Never
