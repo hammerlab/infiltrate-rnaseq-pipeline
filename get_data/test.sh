@@ -1,3 +1,6 @@
+
+# TODO: rewrite this in unix fashion: silent on success. i.e. make docker output quiet and test the exit codes.
+
 sudo rm -rf /mnt/disks/mz/rnatmp2;
 mkdir /mnt/disks/mz/rnatmp2;
 
