@@ -39,8 +39,8 @@ echo "You have $cpu cores and $mem GB of memory" >> logs/$outputname/out.txt
 echo -e "Beginning ungzip:\t$(date +"%Y-%m-%d %H:%M:%S:%3N")" >> logs/$outputname/time.txt
 
 # check to see if files were already ungzipped (interrupted job)
-if [[ ! -f fastq_untrimmed/$prefix_1.fastq || ! -f fastq_untrimmed/$prefix_2.fastq ]]; then
-    # echo "not already ungzipped"
+if [[ ! -f "fastq_untrimmed/${prefix}_1.fastq" || ! -f "fastq_untrimmed/${prefix}_2.fastq" ]]; then
+  # echo "not already ungzipped"
   # gunzip (this WILL delete original files only if successful)
   # unpigz is a parallel version of gunzip
   ungz="unpigz -f $prefix*.fastq.gz"
