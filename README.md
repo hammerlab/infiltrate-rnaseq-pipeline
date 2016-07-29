@@ -170,7 +170,7 @@ go to `image/`
 rm jobs/*
 python make_jobs.py
 kubectl create -f ./jobs
-kubectl get jobs | grep 'process' | wc -l # should be 126. all the download jobs are still in there as completed
+kubectl get jobs | grep 'process' | wc -l # should be 126. all the download jobs are still in there as completed. ACTUALLY SHOULD BE 126/2 = 63.
 wc -l ../list_of_data.txt # should be 125, but do not have line break at end so actually 126
 ```
 
@@ -179,3 +179,7 @@ logs say `2016-07-28T21:07:14.042061665Z unpigz: ERR431566_1.fastq.gz*.fastq.gz 
 I saw this at dashboard at https://104.196.139.139/api/v1/proxy/namespaces/kube-system/services/kubernetes-dashboard/#/log/default/process-err431566-1-zjswo/
 
 So delete all jobs and start again: `kubectl delete jobs --all`, `kubectl get jobs` to verify, then redo above.
+
+Note that this took forever -- see my Twitter thread here: https://twitter.com/zazius/status/758816688171126784
+
+Rewrote jobs and launched as above. should have 63 jobs now. :)
