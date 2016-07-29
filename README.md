@@ -139,3 +139,43 @@ Looks like it runs 15 pods at a time. (15 tasks)
 * http://localhost:3000/dashboard/db/storage
 * http://localhost:3000/dashboard/db/system
 * https://104.196.139.139/api/v1/proxy/namespaces/kube-system/services/kubernetes-dashboard
+
+It worked well -- only one job failed, rescheduled (new pod), succeeded.
+Only issue is that logs are no longer available in Kubernetes -- I guess the pods get garbage collected. This is a known issue:
+
+```
+kubectl get pods -a
+> ...
+> download-err431623-2-52tlr   0/1       Completed   0          1h
+> download-err431623-2-rds71   0/1       Error       0          2h
+> ...
+kubectl logs download-err431623-2-52tlr --previous
+> Error from server: previous terminated container "download-err431623-2" in pod "download-err431623-2-52tlr" not found
+kubectl logs download-err431623-2-rds71 --previous
+> Error from server: previous terminated container "download-err431623-2" in pod "download-err431623-2-rds71" not found
+
+```
+
+# run the process tasks
+
+go to `image/`
+
+```
+# ran these on maximz box
+./build.sh
+./test.sh
+./publish_image.sh
+
+# ran these from local
+rm jobs/*
+python make_jobs.py
+kubectl create -f ./jobs
+kubectl get jobs | grep 'process' | wc -l # should be 126. all the download jobs are still in there as completed
+wc -l ../list_of_data.txt # should be 125, but do not have line break at end so actually 126
+```
+
+Oops I screwed up, sent full file name instead of prefix:
+logs say `2016-07-28T21:07:14.042061665Z unpigz: ERR431566_1.fastq.gz*.fastq.gz does not exist -- skipping`
+I saw this at dashboard at https://104.196.139.139/api/v1/proxy/namespaces/kube-system/services/kubernetes-dashboard/#/log/default/process-err431566-1-zjswo/
+
+So delete all jobs and start again: `kubectl delete jobs --all`, `kubectl get jobs` to verify, then redo above.

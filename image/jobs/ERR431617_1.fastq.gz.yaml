@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: process-err431617-1
+spec:
+  template:
+    metadata:
+      name: process-err431617-1
+    spec:
+      containers:
+      - name: process-err431617-1
+        image: gcr.io/pici-1286/mz-rna-pipeline:latest
+        command: ["process", "ERR431617_1" , "Homo_sapiens.GRCh38.cdna.all.kallisto.idx", "ERR431617_1"]
+        resources:
+          limits:
+            cpu: 3
+            memory: 25Gi
+          requests:
+            cpu: 3
+            memory: 25Gi
+        volumeMounts:
+        - mountPath: /working
+          name: nfs
+      volumes:
+      - name: nfs
+        persistentVolumeClaim:
+          claimName: nfs          
+      restartPolicy: Never
