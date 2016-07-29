@@ -1,0 +1,332 @@
+bug report:
+
+I'm running a singlefs (via Google Cloud Launcher), 8 vCPU, 40GB RAM. CPU fluctuating between 4 and 6% utilization.
+Used as persistent volume in Kubernetes jobs. Many jobs have written to it.
+Today, launched 63 jobs. They start failing because cannot write. 
+I have the nfs mounted in another GCE VM and tried writing myself. Cannot write to subdirectory, but can still read files. However, I can write to root directory. I did `touch test`, and then `ls -la`. On that VM, the file looks like it's owned by `maxim:maxim`: `-rw-rw-r--   1 maxim   maxim                     0 Jul 29 18:06 test`. 
+Then I ssh'ed to the singlefs VM and did a ls -la. That file now looks like `-rw-rw-r--   1 victorg ankurshukla          0 Jul 29 18:06 test`. No idea who `victorg` is, but `ankurshukla` looks like a technical PM on GCP.
+
+
+from other GCE VM:
+➜  mz-data ls -la
+total 199785888
+drwxrwxrwx   8 root    root                    128 Jul 29 18:19 .
+drwxr-xr-x   4 root    root                   4096 Jul 27 18:04 ..
+-rw-rw-r--   1 maxim   maxim            2270974740 Jul 27 19:35 b37.kallisto.idx
+drwxr-xr-x   2 nobody  nogroup                 128 Jul 27 23:18 download_logs
+-rw-r--r--   1 nobody  nogroup          1856715868 Jul 27 22:15 ERR431571_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1773925985 Jul 27 22:14 ERR431571_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1096698673 Jul 27 22:08 ERR431572_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1086742471 Jul 27 22:13 ERR431572_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1883224585 Jul 27 22:14 ERR431573_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1920444570 Jul 27 22:14 ERR431573_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          3839782386 Jul 27 22:29 ERR431574_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          4067405485 Jul 27 22:28 ERR431574_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1424247343 Jul 27 22:14 ERR431575_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1508587221 Jul 27 22:23 ERR431575_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1417364168 Jul 27 22:21 ERR431576_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1504867771 Jul 27 22:20 ERR431576_2.fastq.gz
+-rw-------   1 nobody  nogroup          2800975872 Jul 29 18:18 ERR431577_1.fastq
+-rw-r--r--   1 nobody  nogroup          1405581378 Jul 27 22:21 ERR431577_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1416962688 Jul 27 22:25 ERR431577_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1874445259 Jul 27 22:34 ERR431578_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1896215858 Jul 27 22:28 ERR431578_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1208772354 Jul 27 22:29 ERR431579_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1225854064 Jul 27 22:28 ERR431579_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup           486919495 Jul 27 22:29 ERR431580_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup           465561193 Jul 27 22:11 ERR431580_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          3815118706 Jul 27 22:33 ERR431581_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          4049739842 Jul 27 22:46 ERR431581_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1851060500 Jul 27 22:44 ERR431582_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1887676679 Jul 27 22:36 ERR431582_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1370160426 Jul 27 22:31 ERR431583_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1391245904 Jul 27 22:36 ERR431583_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1108094627 Jul 27 22:36 ERR431584_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1110290316 Jul 27 22:16 ERR431584_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1974185076 Jul 27 22:39 ERR431585_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          2003215685 Jul 27 22:40 ERR431585_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          2176076952 Jul 27 22:40 ERR431586_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          2209891613 Jul 27 22:40 ERR431586_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1041120183 Jul 27 22:32 ERR431587_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1043729438 Jul 27 22:42 ERR431587_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1441498543 Jul 27 22:26 ERR431588_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1523644907 Jul 27 22:42 ERR431588_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1197357300 Jul 27 22:21 ERR431589_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1213164638 Jul 27 22:25 ERR431589_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1936353072 Jul 27 22:47 ERR431590_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1975545251 Jul 27 22:46 ERR431590_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          2145948051 Jul 27 22:54 ERR431591_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          2180748247 Jul 27 22:50 ERR431591_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          2004595364 Jul 27 22:31 ERR431592_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          2027760722 Jul 27 22:23 ERR431592_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1147511755 Jul 27 22:45 ERR431593_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1162852334 Jul 27 22:47 ERR431593_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1769428139 Jul 27 22:51 ERR431594_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1752409398 Jul 27 22:52 ERR431594_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup           978102864 Jul 27 22:16 ERR431595_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup           954662186 Jul 27 22:53 ERR431595_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1637496833 Jul 27 22:52 ERR431596_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1657771293 Jul 27 22:54 ERR431596_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup           956656177 Jul 27 22:55 ERR431597_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup           939342800 Jul 27 22:56 ERR431597_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1620524656 Jul 27 22:57 ERR431598_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1665502167 Jul 27 23:01 ERR431598_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1244261045 Jul 27 22:17 ERR431601_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1258357028 Jul 27 22:34 ERR431601_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1994037882 Jul 27 22:23 ERR431602_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          2016111752 Jul 27 22:51 ERR431602_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1413063768 Jul 27 23:03 ERR431603_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1501396767 Jul 27 22:23 ERR431603_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1907421031 Jul 27 23:03 ERR431605_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1924090969 Jul 27 23:04 ERR431605_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1251110033 Jul 27 23:00 ERR431606_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1261269724 Jul 27 23:00 ERR431606_2.fastq.gz
+-rw-------   1 nobody  nogroup          4856872960 Jul 29 18:19 ERR431607_1.fastq
+-rw-r--r--   1 nobody  nogroup          2258602876 Jul 27 22:40 ERR431607_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          2285869659 Jul 27 22:50 ERR431607_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          3800382981 Jul 27 23:04 ERR431608_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          4025861307 Jul 27 23:16 ERR431608_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1493160014 Jul 27 22:31 ERR431609_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1513910177 Jul 27 22:43 ERR431609_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1362960162 Jul 27 22:31 ERR431610_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1305959228 Jul 27 22:54 ERR431610_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          2194851120 Jul 27 22:55 ERR431611_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          2237677684 Jul 27 22:22 ERR431611_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1891228979 Jul 27 23:08 ERR431612_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1905649492 Jul 27 23:05 ERR431612_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          3773357666 Jul 27 23:16 ERR431613_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          4006907473 Jul 27 23:06 ERR431613_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          2139562017 Jul 27 22:51 ERR431614_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          2187787064 Jul 27 22:49 ERR431614_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1134682528 Jul 27 23:07 ERR431615_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1149356987 Jul 27 22:28 ERR431615_2.fastq.gz
+-rw-------   1 nobody  nogroup          1248034816 Jul 29 18:20 ERR431616_1.fastq
+-rw-r--r--   1 nobody  nogroup          1419671281 Jul 27 23:10 ERR431616_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1513053035 Jul 27 22:37 ERR431616_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1309380163 Jul 27 23:03 ERR431617_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1294774566 Jul 27 23:09 ERR431617_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1030714383 Jul 27 22:28 ERR431618_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1017998259 Jul 27 22:55 ERR431618_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1200445406 Jul 27 23:07 ERR431619_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1146245694 Jul 27 23:08 ERR431619_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1561862532 Jul 27 22:27 ERR431620_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1602745733 Jul 27 22:18 ERR431620_2.fastq.gz
+-rw-------   1 nobody  nogroup            13926400 Jul 29 18:20 ERR431621_1.fastq
+-rw-r--r--   1 nobody  nogroup          2242428786 Jul 27 23:01 ERR431621_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          2271606040 Jul 27 22:47 ERR431621_2.fastq.gz
+-rw-------   1 nobody  nogroup            56000512 Jul 29 18:20 ERR431622_1.fastq
+-rw-r--r--   1 nobody  nogroup          1052602583 Jul 27 23:01 ERR431622_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1053011137 Jul 27 22:32 ERR431622_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1705030285 Jul 27 22:57 ERR431623_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1720777340 Jul 27 23:13 ERR431623_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1559555922 Jul 27 23:11 ERR431624_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1515208254 Jul 27 22:47 ERR431624_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1067848324 Jul 27 23:11 ERR431625_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1053133355 Jul 27 23:07 ERR431625_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1861654576 Jul 27 23:13 ERR431626_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1891735021 Jul 27 22:44 ERR431626_2.fastq.gz
+-rw-------   1 nobody  nogroup          2330787840 Jul 29 18:20 ERR431627_1.fastq
+-rw-r--r--   1 nobody  nogroup          1662411614 Jul 27 22:37 ERR431627_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1679625201 Jul 27 22:42 ERR431627_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1145144638 Jul 27 22:52 ERR431628_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup          1159521782 Jul 27 22:38 ERR431628_2.fastq.gz
+drwxr-xr-x   2 nobody  nogroup                  38 Jul 29 18:17 fastq_trimmed
+drwxr-xr-x   2 nobody  nogroup                  20 Jul 29 18:09 fastq_untrimmed
+-rw-rw-r--   1 maxim   maxim            2336384323 Jul 27 19:40 Homo_sapiens.GRCh38.cdna.all.kallisto.idx
+-rw-rw-r--   1 maxim   maxim                    11 Jul 27 21:59 index.html
+drwxr-xr-x 143 nobody  nogroup                 143 Jul 29 18:19 logs
+drwxr-xr-x 143 nobody  nogroup                 143 Jul 29 18:19 output
+drwxr-xr-x   2 arahuja sebastien_mondet          4 Jul 27 21:13 tars
+-rw-rw-r--   1 maxim   maxim                     0 Jul 29 18:06 test
+
+
+from NFS VM:
+maxim@mz-nfs-vm:/mz-data$ ls -la
+total 199785888
+drwxrwxrwx   8 root    root               128 Jul 29 18:19 .
+drwxr-xr-x  23 root    root              4096 Jul 27 21:56 ..
+-rw-rw-r--   1 victorg ankurshukla 2270974740 Jul 27 19:35 b37.kallisto.idx
+drwxr-xr-x   2 nobody  nogroup            128 Jul 27 23:18 download_logs
+-rw-r--r--   1 nobody  nogroup     1856715868 Jul 27 22:15 ERR431571_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1773925985 Jul 27 22:14 ERR431571_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1096698673 Jul 27 22:08 ERR431572_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1086742471 Jul 27 22:13 ERR431572_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1883224585 Jul 27 22:14 ERR431573_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1920444570 Jul 27 22:14 ERR431573_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     3839782386 Jul 27 22:29 ERR431574_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     4067405485 Jul 27 22:28 ERR431574_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1424247343 Jul 27 22:14 ERR431575_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1508587221 Jul 27 22:23 ERR431575_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1417364168 Jul 27 22:21 ERR431576_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1504867771 Jul 27 22:20 ERR431576_2.fastq.gz
+-rw-------   1 nobody  nogroup     2800975872 Jul 29 18:18 ERR431577_1.fastq
+-rw-r--r--   1 nobody  nogroup     1405581378 Jul 27 22:21 ERR431577_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1416962688 Jul 27 22:25 ERR431577_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1874445259 Jul 27 22:34 ERR431578_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1896215858 Jul 27 22:28 ERR431578_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1208772354 Jul 27 22:29 ERR431579_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1225854064 Jul 27 22:28 ERR431579_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup      486919495 Jul 27 22:29 ERR431580_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup      465561193 Jul 27 22:11 ERR431580_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     3815118706 Jul 27 22:33 ERR431581_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     4049739842 Jul 27 22:46 ERR431581_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1851060500 Jul 27 22:44 ERR431582_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1887676679 Jul 27 22:36 ERR431582_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1370160426 Jul 27 22:31 ERR431583_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1391245904 Jul 27 22:36 ERR431583_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1108094627 Jul 27 22:36 ERR431584_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1110290316 Jul 27 22:16 ERR431584_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1974185076 Jul 27 22:39 ERR431585_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     2003215685 Jul 27 22:40 ERR431585_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     2176076952 Jul 27 22:40 ERR431586_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     2209891613 Jul 27 22:40 ERR431586_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1041120183 Jul 27 22:32 ERR431587_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1043729438 Jul 27 22:42 ERR431587_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1441498543 Jul 27 22:26 ERR431588_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1523644907 Jul 27 22:42 ERR431588_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1197357300 Jul 27 22:21 ERR431589_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1213164638 Jul 27 22:25 ERR431589_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1936353072 Jul 27 22:47 ERR431590_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1975545251 Jul 27 22:46 ERR431590_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     2145948051 Jul 27 22:54 ERR431591_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     2180748247 Jul 27 22:50 ERR431591_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     2004595364 Jul 27 22:31 ERR431592_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     2027760722 Jul 27 22:23 ERR431592_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1147511755 Jul 27 22:45 ERR431593_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1162852334 Jul 27 22:47 ERR431593_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1769428139 Jul 27 22:51 ERR431594_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1752409398 Jul 27 22:52 ERR431594_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup      978102864 Jul 27 22:16 ERR431595_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup      954662186 Jul 27 22:53 ERR431595_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1637496833 Jul 27 22:52 ERR431596_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1657771293 Jul 27 22:54 ERR431596_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup      956656177 Jul 27 22:55 ERR431597_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup      939342800 Jul 27 22:56 ERR431597_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1620524656 Jul 27 22:57 ERR431598_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1665502167 Jul 27 23:01 ERR431598_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1244261045 Jul 27 22:17 ERR431601_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1258357028 Jul 27 22:34 ERR431601_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1994037882 Jul 27 22:23 ERR431602_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     2016111752 Jul 27 22:51 ERR431602_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1413063768 Jul 27 23:03 ERR431603_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1501396767 Jul 27 22:23 ERR431603_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1907421031 Jul 27 23:03 ERR431605_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1924090969 Jul 27 23:04 ERR431605_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1251110033 Jul 27 23:00 ERR431606_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1261269724 Jul 27 23:00 ERR431606_2.fastq.gz
+-rw-------   1 nobody  nogroup     4856872960 Jul 29 18:19 ERR431607_1.fastq
+-rw-r--r--   1 nobody  nogroup     2258602876 Jul 27 22:40 ERR431607_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     2285869659 Jul 27 22:50 ERR431607_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     3800382981 Jul 27 23:04 ERR431608_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     4025861307 Jul 27 23:16 ERR431608_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1493160014 Jul 27 22:31 ERR431609_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1513910177 Jul 27 22:43 ERR431609_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1362960162 Jul 27 22:31 ERR431610_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1305959228 Jul 27 22:54 ERR431610_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     2194851120 Jul 27 22:55 ERR431611_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     2237677684 Jul 27 22:22 ERR431611_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1891228979 Jul 27 23:08 ERR431612_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1905649492 Jul 27 23:05 ERR431612_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     3773357666 Jul 27 23:16 ERR431613_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     4006907473 Jul 27 23:06 ERR431613_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     2139562017 Jul 27 22:51 ERR431614_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     2187787064 Jul 27 22:49 ERR431614_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1134682528 Jul 27 23:07 ERR431615_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1149356987 Jul 27 22:28 ERR431615_2.fastq.gz
+-rw-------   1 nobody  nogroup     1248034816 Jul 29 18:20 ERR431616_1.fastq
+-rw-r--r--   1 nobody  nogroup     1419671281 Jul 27 23:10 ERR431616_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1513053035 Jul 27 22:37 ERR431616_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1309380163 Jul 27 23:03 ERR431617_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1294774566 Jul 27 23:09 ERR431617_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1030714383 Jul 27 22:28 ERR431618_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1017998259 Jul 27 22:55 ERR431618_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1200445406 Jul 27 23:07 ERR431619_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1146245694 Jul 27 23:08 ERR431619_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1561862532 Jul 27 22:27 ERR431620_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1602745733 Jul 27 22:18 ERR431620_2.fastq.gz
+-rw-------   1 nobody  nogroup       13926400 Jul 29 18:20 ERR431621_1.fastq
+-rw-r--r--   1 nobody  nogroup     2242428786 Jul 27 23:01 ERR431621_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     2271606040 Jul 27 22:47 ERR431621_2.fastq.gz
+-rw-------   1 nobody  nogroup       56000512 Jul 29 18:20 ERR431622_1.fastq
+-rw-r--r--   1 nobody  nogroup     1052602583 Jul 27 23:01 ERR431622_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1053011137 Jul 27 22:32 ERR431622_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1705030285 Jul 27 22:57 ERR431623_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1720777340 Jul 27 23:13 ERR431623_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1559555922 Jul 27 23:11 ERR431624_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1515208254 Jul 27 22:47 ERR431624_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1067848324 Jul 27 23:11 ERR431625_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1053133355 Jul 27 23:07 ERR431625_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1861654576 Jul 27 23:13 ERR431626_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1891735021 Jul 27 22:44 ERR431626_2.fastq.gz
+-rw-------   1 nobody  nogroup     2330787840 Jul 29 18:20 ERR431627_1.fastq
+-rw-r--r--   1 nobody  nogroup     1662411614 Jul 27 22:37 ERR431627_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1679625201 Jul 27 22:42 ERR431627_2.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1145144638 Jul 27 22:52 ERR431628_1.fastq.gz
+-rw-r--r--   1 nobody  nogroup     1159521782 Jul 27 22:38 ERR431628_2.fastq.gz
+drwxr-xr-x   2 nobody  nogroup             38 Jul 29 18:17 fastq_trimmed
+drwxr-xr-x   2 nobody  nogroup             20 Jul 29 18:09 fastq_untrimmed
+-rw-rw-r--   1 victorg ankurshukla 2336384323 Jul 27 19:40 Homo_sapiens.GRCh38.cdna.all.kallisto.idx
+-rw-rw-r--   1 victorg ankurshukla         11 Jul 27 21:59 index.html
+drwxr-xr-x 143 nobody  nogroup            143 Jul 29 18:19 logs
+drwxr-xr-x 143 nobody  nogroup            143 Jul 29 18:19 output
+drwxr-xr-x   2 maxim   maxim                4 Jul 27 21:13 tars
+-rw-rw-r--   1 victorg ankurshukla          0 Jul 29 18:06 test
+
+from other GCE VM:
+```
+> cd tars
+> touch test
+touch: cannot touch ‘test’: Permission denied
+> ls -la
+total 24370
+drwxr-xr-x 2 arahuja sebastien_mondet        4 Jul 27 21:13 .
+drwxrwxrwx 8 root    root                  128 Jul 29 18:19 ..
+-rw-r--r-- 1 nobody  nogroup            190424 Jul 27 21:03 ERR431606.logs.tar.gz
+-rw-r--r-- 1 nobody  nogroup          24535898 Jul 27 21:03 ERR431606.tar.gz
+```
+
+Only thing that I was doing before this started was I resized the Kube cluster from 5 to 6 nodes while it was running jobs. The Kube cluster seemed inaccessible for a while through kubectl and through dashboard, but then both came back up and tasks seemed to still be running.
+And then they started failing.
+
+Here is failure log from a task that ran for 30 minutes:
+2016-07-29T18:01:56.077738037Z tar (child): tars/ERR431570.tar.gz: Cannot open: Permission denied
+2016-07-29T18:01:56.077806389Z tar (child): Error is not recoverable: exiting now
+2016-07-29T18:01:56.078709057Z output/ERR431570/
+2016-07-29T18:01:56.078897037Z output/ERR431570/abundance.tsv
+
+Here is failure log from a new task that just started and was unable to proceed:
+2016-07-29T18:00:39.209922224Z unpigz: ERR431566*.fastq.gz does not exist -- skipping
+I'm not sure this is a read issue -- probably could not write the non-.gz file?
+Correction: that file had already been half-processed. Oops. (TODO: disable unpigz's deletion of original files, so we can rerun jobs whenever.)
+
+Other newly-started (not restarted) tasks seemed to go for 12-15 minutes (by the time they're done ungzipping) and then failed -- probably on write of the ungzip
+e.g. process-err431566-272o5
+these are now in the fastq_untrimmed folder
+Correction: NOPE that's the same task as above -- i.e. restarted. IGNORE
+
+System: http://imgur.com/Ut782Ug
+Storage: http://imgur.com/63UhVwg
+
+Running `users` on nfs vm would show 2 users:
+`maxim 	maxim`
+
+
+
+# after reboot of nfs vm and other google cloud VM
+
+from other:
+> sudo mount -t nfs mz-nfs-vm:/mz-data /mnt/mz-data
+mount.nfs: access denied by server while mounting mz-nfs-vm:/mz-data
+
+from NFS: `users` now only returns 1 user: `maxim`
+
+rebooted nfs vm again, and now it mounts with that mount command!
+
+can write to root -- new files are still with weird ownership with ls'ed from nfs vm.
+still cannot write anything to tars/
+can make a new dir and write to there. again with victorg:ankur... when ls'ed from nfs vm.
+
+
+sudo chown -R nobody:nogroup .
+sudo chown -R maxim:maxim .
+still cannot write to tars/

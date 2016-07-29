@@ -183,3 +183,69 @@ So delete all jobs and start again: `kubectl delete jobs --all`, `kubectl get jo
 Note that this took forever -- see my Twitter thread here: https://twitter.com/zazius/status/758816688171126784
 
 Rewrote jobs and launched as above. should have 63 jobs now. :)
+
+# Weird NFS bug
+
+Experienced a very weird nfs bug where i can no longer write and files are owned by googlers' usernames. see `gce bug` for the details.
+
+Tried many things, posted on Twitter, etc.
+But gave up eventually.
+
+Launched mz-nfs-2 and going to redo all of the above.
+
+```
+### MAKE SURE NEW NFS WORKS PROPERLY (have to wait a few mins for initialization though)
+# From maximz VM:
+sudo umount /mnt/mz-data
+sudo mount -t nfs mz-nfs-2-vm:/mz-data /mnt/mz-data
+# edit /etc/fstab
+
+
+### SSH to NFS
+gcloud compute ssh --ssh-flag=-L3000:localhost:3000 --project=pici-1286 --zone us-east1-b mz-nfs-2-vm
+# go to localhost:3000: admin / m1VwMwEbTu84+3
+
+## set up kubernetes volume
+gcloud container clusters get-credentials some-cluster
+kubectl delete pv,pvc --all
+kubectl get pv
+kubectl get pvc
+kubectl create -f nfs/nfs-pv.yaml # persistent volume
+kubectl create -f nfs/nfs-pvc.yaml # persistent volume claim
+
+# load web UI from there
+chrome https://104.196.139.139/api/v1/proxy/namespaces/kube-system/services/kubernetes-dashboard
+
+
+### launch download jobs
+
+# cd get_data
+# rm jobs/*
+# python make_jobs.py
+# kubectl create -f ./jobs
+# kubectl get jobs | wc -l
+```
+
+NO fixed the NFS bug like this:
+
+```
+maxim@mz-nfs-vm:/mz-data$ sudo chmod -R 777 *
+```
+
+BUT have to redo the pv,pvc because I had deleted them
+```
+kubectl delete pv,pvc --all
+kubectl get pv
+kubectl get pvc
+kubectl create -f nfs/nfs-pv.yaml # persistent volume -- make sure vm set properly here
+kubectl create -f nfs/nfs-pvc.yaml # persistent volume claim
+```
+
+Test it out:
+```
+kubectl create -f nfs/nfsFullTest.yaml
+kubectl create -f nfs/nfsFullTest2.yaml
+kubectl get jobs
+kubectl delete jobs --all
+```
+
