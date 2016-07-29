@@ -249,3 +249,16 @@ kubectl get jobs
 kubectl delete jobs --all
 ```
 
+Built new image because updated customProcess.sh.
+
+Rerun jobs:
+```
+rm jobs/*
+python make_jobs.py
+kubectl create -f ./jobs
+kubectl get jobs | grep 'process' | wc -l # should be 63
+```
+
+Things are running happily.
+
+Turn down and delete mz-nfs-2, and its disk.
