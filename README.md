@@ -307,4 +307,18 @@ kubectl create -f 1_setup/
 kubectl get pv,pvc
 kubectl create -f 2_download/
 kubectl get jobs
+
+# wait until success
+
+kubectl create -f 3_process/
+kubectl get jobs
+
+# wait until success
+
+# clear all
+kubectl delete jobs,pv,pvc --all
 ```
+
+Mistake: forgot to copy over the kallisto index!
+From mz-nfs-3-vm:
+`gsutil cp gs://mz-hammerlab/index/Homo_sapiens.GRCh38.cdna.all.kallisto.idx /mz-data/`
