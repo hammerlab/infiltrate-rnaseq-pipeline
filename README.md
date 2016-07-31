@@ -262,3 +262,49 @@ kubectl get jobs | grep 'process' | wc -l # should be 63
 Things are running happily.
 
 Turn down and delete mz-nfs-2, and its disk.
+
+
+Some jobs had failed because we ran out of space!!!
+```
+➜  ~ kubectl get jobs | grep ' 0 '
+process-err431608   1         0            1d
+process-err431613   1         0            1d
+process-err431614   1         0            1d
+process-err431622   1         0            1d
+process-err431623   1         0            1d
+process-err431624   1         0            1d
+process-err431625   1         0            1d
+process-err431626   1         0            1d
+process-err431627   1         0            1d
+process-err431628   1         0            1d
+```
+
+So I resized the disk `mz-nfs-vm-mz-data` from 1000 GB to 1500 GB by following this guide: https://cloud.google.com/compute/docs/disks/add-persistent-disk
+1. Resize in control panel (instance can be running, no problem)
+2. df -h confirms that out of space. df -T confirms that zfs. so can't just do sudo resize2fs /dev/disk/by-id/google-mz-nfs-vm-mz-data
+3. From nfs vm, follow http://alittlestupid.com/2010/10/24/how-to-grow-a-zfs-volume/
+```
+sudo zfs get volsize,reservation mz-data
+```
+
+That didn't work actually, maybe because the zfs volume was busy.
+
+So I made a new nfs: mz-nfs-3.
+Then made `last_few_jobs/` for the jobs that we run on the new NFS.
+
+From there:
+```
+# modify the pv to point to nfs_3
+
+# copy others
+ls -1 ../get_data/jobs | grep -i -f jobs_that_failed_due_to_fulldisk.md | xargs -I {} sh -c 'cp ../get_data/jobs/{} 2_download'
+ls -1 ../image/jobs | grep -i -f jobs_that_failed_due_to_fulldisk.md | xargs -I {} sh -c 'cp ../image/jobs/{} 3_process'
+
+# delete old pv,pvc
+kubectl delete pv,pvc --all
+
+kubectl create -f 1_setup/
+kubectl get pv,pvc
+kubectl create -f 2_download/
+kubectl get jobs
+```
