@@ -317,6 +317,8 @@ kubectl get jobs
 
 # clear all
 kubectl delete jobs,pv,pvc --all
+
+# spin down the cluster in control panel
 ```
 
 Mistake: forgot to copy over the kallisto index!
