@@ -324,3 +324,7 @@ kubectl delete jobs,pv,pvc --all
 Mistake: forgot to copy over the kallisto index!
 From mz-nfs-3-vm:
 `gsutil cp gs://mz-hammerlab/index/Homo_sapiens.GRCh38.cdna.all.kallisto.idx /mz-data/`
+
+----
+
+The Kubernetes bug is filed here: https://github.com/kubernetes/kubernetes/issues/30243
