@@ -121,7 +121,7 @@ Same procedure:
 cd process/
 # ran these on GCE VM
 ./build.sh
-./test.sh
+./run.sh # may need to change some of the paths in here first to a tmp directory; all test files are available in gs://mz-hammerlab/data and gs://mz-hammerlab/index
 ./publish_image.sh
 
 # ran these from local machine
