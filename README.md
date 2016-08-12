@@ -11,7 +11,7 @@ This is used by `hammmerlab/immune-infiltrate-explorations`.
 
 ## Set up NFS for reading and writing data
 
-Launch [single-node nfs](https://cloud.google.com/launcher/solution/click-to-deploy-images/singlefs). I called it `mz-nfs-vm` and went with 8 vCPU, 40 GB RAM.
+Launch a [single-node NFS server](https://cloud.google.com/launcher/solution/click-to-deploy-images/singlefs). I called it `mz-nfs-vm` and went with 8 vCPU, 40 GB RAM.
 
 Here's how to monitor it:
 
@@ -74,13 +74,13 @@ cd get_data
 
 (Note, I ran the above from a GCE VM, but you can do it locally as well.)
 
-The image is based on the containers from [A cloud-based workflow to quantify transcript-expression levels in public cancer compendia](http://discourse.hammerlab.org/t/a-cloud-based-workflow-to-quantify-transcript-expression-levels-in-public-cancer-compendia/559), except with custom shell scripts dropped in. The original containers are in `original_containers_from_paper`.
+The image is based on the containers from [*A cloud-based workflow to quantify transcript-expression levels in public cancer compendia*](http://discourse.hammerlab.org/t/a-cloud-based-workflow-to-quantify-transcript-expression-levels-in-public-cancer-compendia/559), except with custom shell scripts dropped in. The original containers are in `original_containers_from_paper`.
 
 Create Kubernetes jobs from a YAML template, and launch them:
 
 ```
 rm jobs/*
-python make_jobs.py
+python make_jobs.py # creates files in jobs/ from template.yaml and ../list_of_data.txt
 kubectl create -f ./jobs
 kubectl get jobs | wc -l # should be 127 with header; subtract one = 126
 wc -l ../list_of_data.txt # should be 126
