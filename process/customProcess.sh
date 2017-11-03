@@ -3,23 +3,25 @@
 set -e; # quit on error
 
 # What it does:
-# 1. un-gzip fastq data
+
+# 1. convert bam to fastq
 # 2. trim fastq
 # 3. run kallisto
 # 4. tar up output and logs
 
 # Arguments:
-# 1. prefix for reads, whose filenames end in .fastq.gz
+# 1. bam file name (in inputs dir)
 # 2. kallisto index file name.
 # 3. output folder name.
 
 # example:
-# ./process ERR431606 Homo_sapiens.GRCh38.cdna.all.kallisto.idx ERR431606_out
+# ./process  Homo_sapiens.GRCh38.cdna.all.kallisto.idx ERR431606_out
 # this will process ERR431606_1.fastq.gz, ERR431606_2.fastq.gz with Kallisto index Homo_sapiens.GRCh38.cdna.all.kallisto.idx
 # the results will be stored in output/ERR431606_out, and the logs will be stored in logs/ERR431606_out.
 # both of those directories will be targz'ed up at the end.
 
-prefix=$1;
+bamfile=/inputs/$1
+prefix="${1%.*}"
 indexname=$2;
 outputname=$3;
 
@@ -29,37 +31,24 @@ mkdir -p output/$outputname/;
 mkdir -p logs/$outputname/;
 mkdir -p fastq_untrimmed;
 mkdir -p fastq_trimmed;
-echo -e "Starting\t$(date +"%Y-%m-%d %H:%M:%S:%3N")" > logs/$outputname/time.txt
+echo -e "Starting\t$(date +"%Y-%m-%d %H:%M:%S:%3N")" >> logs/$outputname/time.txt
 
 logSar &
 cpu=$(getNumCPU)
 mem=$(free -h | gawk  '/Mem:/{print $2}')
 
 echo "You have $cpu cores and $mem GB of memory" >> logs/$outputname/out.txt
-echo -e "Beginning ungzip:\t$(date +"%Y-%m-%d %H:%M:%S:%3N")" >> logs/$outputname/time.txt
-
-# check to see if files were already ungzipped (interrupted job)
-if [[ ! -f "fastq_untrimmed/${prefix}_1.fastq" || ! -f "fastq_untrimmed/${prefix}_2.fastq" ]]; then
-  # echo "not already ungzipped"
-  # gunzip (this WILL delete original files only if successful)
-  # unpigz is a parallel version of gunzip
-  ungz="unpigz -f $prefix*.fastq.gz"
-  echo $ungz >> logs/$outputname/out.txt
-  $ungz >> logs/$outputname/out.txt
-
-  mv $prefix*.fastq fastq_untrimmed
-
-  echo -e "Finished UNTAR:\t$(date +"%Y-%m-%d %H:%M:%S:%3N")" >> logs/$outputname/time.txt
-fi
+echo -e "Beginning conversion:\t$(date +"%Y-%m-%d %H:%M:%S:%3N")" >> logs/$outputname/time.txt
+#samtools sort -n $bamfile ${bamfile}.qsort
+bamToFastq -i ${bamfile} -fq "fastq_untrimmed/${prefix}_1.fastq" >> logs/$outputname/out.txt
 
 ##### TRIM
-
 echo -e "Trimming Fastq:\t$(date +"%Y-%m-%d %H:%M:%S:%3N")" >> logs/$outputname/time.txt
 taskFile="/tmp/gdsc_parallel_tasks_$prefix"
 rm -f $taskFile
 
 # automatically detects whether we have paired end reads (num > 0)
-num=$(ls fastq_untrimmed/$prefix*_1.* | wc -l)
+num=$(ls fastq_untrimmed/$prefix* | wc -l)
 kallisto_option=""
 if (( $num > 0 )); then
   for f1 in "fastq_untrimmed/$prefix*_1.*"
@@ -83,7 +72,7 @@ chmod 777 $taskFile
 parallel -a $taskFile --ungroup --max-procs $cpu &>> logs/$outputname/out.txt
 rm -f $taskFile
 
-untrimmed=$(ls fastq_untrimmed/$prefix* | wc -l)
+untrimmed=$(ls fastq_untrimmed/${prefix}_1.fastq | wc -l)
 trimmed=$(ls fastq_trimmed/$prefix*.fq | wc -l)
 
 if [ $untrimmed != $trimmed ]; then
@@ -97,7 +86,7 @@ echo -e "Finished Trimming Fastq:\t$(date +"%Y-%m-%d %H:%M:%S:%3N")" >> logs/$ou
 
 echo -e "Running Kallisto:\t$(date +"%Y-%m-%d %H:%M:%S:%3N")" >> logs/$outputname/time.txt
 # kallisto command depends on whether we have paired-end reads
-if (( $num > 0 )); then
+if (( $num > 1 )); then
   kallisto quant -i $indexname -b 30 -t $cpu --bias -o output/$outputname/ $(ls -d -1 fastq_trimmed/$prefix*.fq) &>> logs/$outputname/out.txt
 else
   kallisto quant -i $indexname -b 30 -t $cpu --bias --single -l 200 -s 5 -o output/$outputname/ $(ls -d -1 fastq_trimmed/$prefix*.fq) &>> logs/$outputname/out.txt
