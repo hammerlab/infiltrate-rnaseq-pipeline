@@ -24,10 +24,10 @@ RUN libtoolize && \
 WORKDIR /tmp/install/biobambam2
 RUN autoreconf -i -f && \
   ./configure --with-libmaus2=/usr/local/lib && \
-  make && \
   make install
 
 # get process code
 COPY customProcess.sh /usr/local/bin/process
 WORKDIR /working
+ENV LD_LIBRARY_PATH=/usr/local/lib
 CMD ["process"]
