@@ -43,55 +43,64 @@ cpu=$(getNumCPU)
 mem=$(free -h | gawk  '/Mem:/{print $2}')
 
 echo "You have $cpu cores and $mem GB of memory" >> $logs/out.txt
-echo -e "Beginning conversion:\t$(date +"%Y-%m-%d %H:%M:%S:%3N")" >> $logs/time.txt
-#samtools sort -n $bamfile ${bamfile}.qsort
-#bamToFastq -i ${bamfile} -fq "fastq_untrimmed/${prefix}_1.fastq" >> logs/$outputname/out.txt
-bamtofastq filename=${bamfile} outputperreadgroupprefix=$prefix outputperreadgroup=1 collate=1 outputdir=$fastq_untrimmed &>> $logs/bamtofastq.log
+untrimmed=$(ls $fastq_untrimmed/*.fq | wc -l)
+if (( $untrimmed > 1 )); then
+    echo -e "Untrimmed fastq files exist; skipping bamtofastq conversion" >> $logs/out.txt
+else 
+    echo -e "Beginning conversion:\t$(date +"%Y-%m-%d %H:%M:%S:%3N")" >> $logs/time.txt
+    #samtools sort -n $bamfile ${bamfile}.qsort
+    #bamToFastq -i ${bamfile} -fq "fastq_untrimmed/${prefix}_1.fastq" >> logs/$outputname/out.txt
+    bamtofastq filename=${bamfile} outputperreadgroupprefix=$prefix outputperreadgroup=1 collate=1 outputdir=$fastq_untrimmed &>> $logs/bamtofastq.log
+fi
 
 ##### TRIM
-echo -e "Trimming Fastq:\t$(date +"%Y-%m-%d %H:%M:%S:%3N")" >> $logs/time.txt
-taskFile="/tmp/gdsc_parallel_tasks_$prefix"
-rm -f $taskFile
-
-# automatically detects whether we have paired end reads (num > 1)
-num=$(ls $fastq_untrimmed/*.fq | wc -l)
-kallisto_option=""
-if (( $num > 0 )); then
-  for f1 in $(ls $fastq_untrimmed/*_1.*)
-  do
-    f2=${f1/_1\./_2.}
-    if [ -f $f2 ]; then
-      echo "trim_galore --paired $f1 $f2 --length 35 -o $fastq_trimmed/" >> $taskFile
-    else
-      echo "trim_galore $f1 --length 35 -o $fastq_trimmed/" >> $taskFile
-    fi
-  done
-else
-  for f1 in "fastq_untrimmed/*"
-  do
-      echo "trim_galore $f1 --length 35 -o $fastq_trimmed/" >> $taskFile
-  done
-fi
-cp $taskFile $logs
-
-
-chmod 777 $taskFile
-parallel -a $taskFile --ungroup --max-procs $cpu &>> $logs/trim_galore.log
-rm -f $taskFile
-
-untrimmed=$(ls $fastq_untrimmed/*_1.fastq | wc -l)
+untrimmed=$(ls $fastq_untrimmed/*.fq | wc -l)
 trimmed=$(ls $fastq_trimmed/*.fq | wc -l)
-
 if [ $untrimmed != $trimmed ]; then
-  echo "Not all fastq files trimmed" &>> $logs/out.txt
-  exit 1;
+    echo -e "Trimming Fastq:\t$(date +"%Y-%m-%d %H:%M:%S:%3N")" >> $logs/time.txt
+    taskFile="/tmp/gdsc_parallel_tasks_$prefix"
+    rm -f $taskFile
+
+    # automatically detects whether we have paired end reads (num > 1)
+    num=$(ls $fastq_untrimmed/*.fq | wc -l)
+    kallisto_option=""
+    if (( $num > 0 )); then
+      for f1 in $(ls $fastq_untrimmed/*_1.*)
+      do
+        f2=${f1/_1\./_2.}
+        if [ -f $f2 ]; then
+          echo "trim_galore --paired $f1 $f2 --length 35 -o $fastq_trimmed/" >> $taskFile
+        else
+          echo "trim_galore $f1 --length 35 -o $fastq_trimmed/" >> $taskFile
+        fi
+      done
+    else
+      for f1 in "fastq_untrimmed/*"
+      do
+          echo "trim_galore $f1 --length 35 -o $fastq_trimmed/" >> $taskFile
+      done
+    fi
+    cp $taskFile $logs
+
+
+    chmod 777 $taskFile
+    parallel -a $taskFile --ungroup --max-procs $cpu &>> $logs/trim_galore.log
+    rm -f $taskFile
+
+    untrimmed=$(ls $fastq_untrimmed/*.fq | wc -l)
+    trimmed=$(ls $fastq_trimmed/*.fq | wc -l)
+
+    if [ $untrimmed != $trimmed ]; then
+      echo "Not all fastq files trimmed" &>> $logs/out.txt
+      exit 1;
+    fi
+
+    echo -e "Finished Trimming Fastq:\t$(date +"%Y-%m-%d %H:%M:%S:%3N")" >> $logs/time.txt
+    # note that trim_galore seems to name all files *.fq
 fi
-
-echo -e "Finished Trimming Fastq:\t$(date +"%Y-%m-%d %H:%M:%S:%3N")" >> $logs/time.txt
-# note that trim_galore seems to name all files *.fq
-
 
 echo -e "Running Kallisto:\t$(date +"%Y-%m-%d %H:%M:%S:%3N")" >> $logs/time.txt
+num=$(ls $fastq_trimmed/*.fq | wc -l)
 # kallisto command depends on whether we have paired-end reads
 if (( $num > 1 )); then
   kallisto quant -i $indexname -b 30 -t $cpu --bias -o $output/ $(ls -d -1 $fastq_trimmed/*.fq) &>> $logs/kallisto.log
