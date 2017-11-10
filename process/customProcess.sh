@@ -72,7 +72,7 @@ else
       echo "trim_galore $f1 --length 35 -o $fastq_trimmed/" >> $taskFile
   done
 fi
-cp $taskfile $logs
+cp $taskFile $logs
 
 
 chmod 777 $taskFile
