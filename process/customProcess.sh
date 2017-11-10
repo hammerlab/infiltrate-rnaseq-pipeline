@@ -1,30 +1,88 @@
 #!/bin/bash
 
+
+usage="$(basename "$0") [-h] -i indexfile -o outputdir-name [-b bamfile | -f fastq-file] -- trim & process files using kallisto
+
+where:
+    -h  show this help text
+    -i  path to indexfile (within this container, possibly mounted via -v)
+    -o  output directory for this sample, within /outputs
+    -b  path to bamfile, relative to /inputs
+    -f  path to fastq file(s), relative to /inputs"
+
+
 set -e; # quit on error
 
 # What it does:
 
-# 1. convert bam to fastq
+# 1. (optionally) convert bam to fastq
 # 2. trim fastq
 # 3. run kallisto
-# 4. tar up output and logs
-
-# Arguments:
-# 1. bam file name (in inputs dir)
-# 2. kallisto index file name.
-# 3. output folder name.
 
 # example:
-# ./process  Homo_sapiens.GRCh38.cdna.all.kallisto.idx ERR431606_out
+# ./process  -i Homo_sapiens.GRCh38.cdna.all.kallisto.idx -o ERR431606_out -f ERR431606.fastq.tar.gz
 # this will process ERR431606_1.fastq.gz, ERR431606_2.fastq.gz with Kallisto index Homo_sapiens.GRCh38.cdna.all.kallisto.idx
-# the results will be stored in output/ERR431606_out, and the logs will be stored in logs/ERR431606_out.
-# both of those directories will be targz'ed up at the end.
+# the results will be stored in output/ERR431606_out, and the logs will be stored in output/ERR431606_out/logs.
 
-bamfile=/inputs/$1
-prefix="${1%.*}"
-indexname=$2;
-outputname=$3;
+while getopts :i:o:b:f: option
+do
+ case "${option}"
+ in
+ i) indexname=${OPTARG};;
+ o) outputname=${OPTARG};;
+ b) bamfile=${OPTARG};;
+ f) fastqfile=${OPTARG};;
+ ?) echo "$usage"
+    exit 0
+    ;;
+ esac
+done
+shift $((OPTIND - 1))
 
+## remaining options listed in files
+
+if [ "$bamfile" ]; then
+  prefix="${bamfile%.*}"
+  bamfile=/inputs/$bamfile
+  gunzip=0
+  untar=0
+  untargz=0
+  using_bam=1
+else
+  prefix="${fastqfile%%.*}"
+  using_bam=0
+  # determine if extension is tgz, tar.gz, or gz
+  extension1="${filename#*.}" # full extension
+  extension2="$filename##*.}" # last part of extension
+  if [ "$extension1" == "tar.gz" ]; then
+    untargz=1
+    gunzip=0
+    untar=0
+  elif [ "$extension1" == "targz" ]; then
+    untargz=1
+    gunzip=0
+    untar=0
+  elif [ "$extension1" == "$extension2" ]; then
+    untargz=0
+    if [ "$extension1" == "tar" ]; then
+      untar=1
+      gunzip=0
+    elif [ "$extension1" == "gz" ]; then
+      untar=0
+      gunzip=1
+    fi
+  fi
+  fastqfile=/intput/$fastqfile
+fi
+
+if [ $using_bam -eq 1 ]; then
+    echo "Using bam files"
+else
+    echo "using fastq files"
+fi
+
+
+# directories containing output
 fastq_untrimmed=output/$outputname/fastq_untrimmed
 fastq_trimmed=output/$outputname/fastq_trimmed
 logs=output/$outputname/logs
@@ -41,20 +99,28 @@ echo -e "Starting\t$(date +"%Y-%m-%d %H:%M:%S:%3N")" >> $logs/time.txt
 logSar &
 cpu=$(getNumCPU)
 mem=$(free -h | gawk  '/Mem:/{print $2}')
-
 echo "You have $cpu cores and $mem GB of memory" >> $logs/out.txt
-untrimmed=$(ls $fastq_untrimmed/*.fq | wc -l)
-if (( $untrimmed > 1 )); then
-    echo -e "Untrimmed fastq files exist; skipping bamtofastq conversion" >> $logs/out.txt
-else 
-    echo -e "Beginning conversion:\t$(date +"%Y-%m-%d %H:%M:%S:%3N")" >> $logs/time.txt
-    #samtools sort -n $bamfile ${bamfile}.qsort
-    #bamToFastq -i ${bamfile} -fq "fastq_untrimmed/${prefix}_1.fastq" >> logs/$outputname/out.txt
-    bamtofastq filename=${bamfile} outputperreadgroupprefix=$prefix outputperreadgroup=1 collate=1 outputdir=$fastq_untrimmed &>> $logs/bamtofastq.log
+
+if [ $using_bam -eq 1 ]; then
+	untrimmed=$(ls $fastq_untrimmed/*.fq | wc -l)
+	if (( $untrimmed > 1 )); then
+		echo -e "Untrimmed fastq files exist; skipping bamtofastq conversion" >> $logs/out.txt
+	else 
+		echo -e "Beginning conversion:\t$(date +"%Y-%m-%d %H:%M:%S:%3N")" >> $logs/time.txt
+		#samtools sort -n $bamfile ${bamfile}.qsort
+		#bamToFastq -i ${bamfile} -fq "fastq_untrimmed/${prefix}_1.fastq" >> logs/$outputname/out.txt
+		bamtofastq filename=${bamfile} outputperreadgroupprefix=$prefix outputperreadgroup=1 collate=1 outputdir=$fastq_untrimmed &>> $logs/bamtofastq.log
+	fi
+elif [ $untargz -eq 1 ]; then
+    tar xzf $fastqfile -C $fastq_untrimmed --strip=1 &>> $logs/untargz.txt
+elif [ $untar == 1 ]; then
+    tar xf $fastqfile -C $fastq_untrimmed --strip=1 &>> $logs/untar.txt
+elif [ $gunzip == 1 ]; then
+    cp $fastqfile $fastq_untrimmed && gunzip $fastq_untrimmed/*.gz &>> $logs/gunzip.tzt
 fi
 
 ##### TRIM
-untrimmed=$(ls $fastq_untrimmed/*.fq | wc -l)
+untrimmed=$(ls $fastq_untrimmed/*.f*q | wc -l)
 trimmed=$(ls $fastq_trimmed/*.fq | wc -l)
 if [ $untrimmed != $trimmed ]; then
     echo -e "Trimming Fastq:\t$(date +"%Y-%m-%d %H:%M:%S:%3N")" >> $logs/time.txt
@@ -62,7 +128,7 @@ if [ $untrimmed != $trimmed ]; then
     rm -f $taskFile
 
     # automatically detects whether we have paired end reads (num > 1)
-    num=$(ls $fastq_untrimmed/*.fq | wc -l)
+    num=$(ls $fastq_untrimmed/*.f*q | wc -l)
     kallisto_option=""
     if (( $num > 0 )); then
       for f1 in $(ls $fastq_untrimmed/*_1.*)
